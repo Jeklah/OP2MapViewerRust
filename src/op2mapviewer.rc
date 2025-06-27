@@ -1,0 +1,27 @@
+#include "op2mapviewer.exe.manifest"
+
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "CompanyName", "OP2MapViewer Project"
+            VALUE "FileDescription", "Outpost 2 Map Viewer"
+            VALUE "FileVersion", "1.0.0.0"
+            VALUE "InternalName", "op2mapviewer"
+            VALUE "LegalCopyright", "MIT License"
+            VALUE "OriginalFilename", "op2mapviewer.exe"
+            VALUE "ProductName", "OP2MapViewer"
+            VALUE "ProductVersion", "1.0.0.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+1 ICON "icon.ico"
