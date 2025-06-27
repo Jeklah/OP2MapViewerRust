@@ -49,6 +49,7 @@ impl MapView {
         }
     }
 
+    #[allow(dead_code)]
     pub fn with_config(config: MapViewConfig) -> Self {
         Self {
             config,
@@ -90,8 +91,9 @@ impl MapView {
 
         // Calculate visible area
         let cell_size = self.config.cell_size * self.config.zoom_level;
-        let map_width = (map.info.width as f32) * cell_size;
-        let map_height = (map.info.height as f32) * cell_size;
+        // Calculate map dimensions for potential future use in viewport bounds checking
+        let _map_width = (map.info.width as f32) * cell_size;
+        let _map_height = (map.info.height as f32) * cell_size;
 
         // Draw background
         painter.rect_filled(
@@ -168,6 +170,7 @@ impl MapView {
     }
 
     /// Get the current configuration
+    #[allow(dead_code)]
     pub fn config(&self) -> &MapViewConfig {
         &self.config
     }

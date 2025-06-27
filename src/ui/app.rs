@@ -1,7 +1,7 @@
 //! Main application for OP2MapViewer
 
 use std::path::PathBuf;
-use eframe::egui::{self, ColorImage, TextureHandle};
+use eframe::egui::{self, TextureHandle};
 use rfd::FileDialog;
 
 use crate::map::{
@@ -16,7 +16,6 @@ use super::{
 /// Main application state
 pub struct MapViewerApp {
     map: Option<Map>,
-    map_image: Option<ColorImage>,
     map_texture: Option<TextureHandle>,
     map_path: Option<PathBuf>,
     error_message: Option<String>,
@@ -24,13 +23,13 @@ pub struct MapViewerApp {
     cell_info: CellInfoPanel,
     settings_open: bool,
     about_open: bool,
+    selected_cell_pos: Option<(i32, i32)>,
 }
 
 impl Default for MapViewerApp {
     fn default() -> Self {
         Self {
             map: None,
-            map_image: None,
             map_texture: None,
             map_path: None,
             error_message: None,
@@ -38,6 +37,7 @@ impl Default for MapViewerApp {
             cell_info: CellInfoPanel::new(),
             settings_open: false,
             about_open: false,
+            selected_cell_pos: None,
         }
     }
 }
@@ -221,9 +221,9 @@ impl eframe::App for MapViewerApp {
                         ui.separator();
                     }
 
-                    // Show cell info
-                    if let Some(pos) = self.map_view.show(ui, map) {
-                        if let Some(cell) = map.get_cell(pos.x, pos.y) {
+                    // Show cell info based on selected position
+                    if let Some((x, y)) = self.selected_cell_pos {
+                        if let Some(cell) = map.get_cell(x, y) {
                             self.cell_info.show(ui, Some(cell));
                         }
                     } else {
@@ -241,7 +241,9 @@ impl eframe::App for MapViewerApp {
             }
 
             if let Some(map) = &self.map {
-                self.map_view.show(ui, map);
+                if let Some(pos) = self.map_view.show(ui, map) {
+                    self.selected_cell_pos = Some((pos.x, pos.y));
+                }
             } else {
                 ui.centered_and_justified(|ui| {
                     ui.heading("Welcome to OP2MapViewer");
