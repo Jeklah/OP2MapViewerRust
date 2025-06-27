@@ -6,8 +6,12 @@ authors = ["Your Name <you@example.com>"]
 description = "Minimal OP2MapViewer prototype in Rust using eframe and image"
 license = "MIT"
 
+[[bin]]
+name = "op2mapviewer"
+path = "src/main.rs"
+
 [dependencies]
-eframe = "0.27"
+eframe = { version = "0.27", features = ["persistence"] }
 egui = "0.27"
 image = "0.25"
-rfd = "0.13" # For file dialogs
+rfd = "0.13"                                              # For file dialogs
