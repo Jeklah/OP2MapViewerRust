@@ -6,6 +6,9 @@ authors = ["Your Name <you@example.com>"]
 description = "Minimal OP2MapViewer prototype in Rust using eframe and image"
 license = "MIT"
 
+[build-dependencies]
+embed-resource = "2.4"
+
 [[bin]]
 name = "op2mapviewer"
 path = "src/main.rs"
@@ -15,3 +18,4 @@ eframe = { version = "0.27", features = ["persistence"] }
 egui = "0.27"
 image = "0.25"
 rfd = "0.13"                                              # For file dialogs
+winresource = "0.1"                                       # For Windows resource files
