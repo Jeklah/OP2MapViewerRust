@@ -1,0 +1,13 @@
+[package]
+name = "op2mapviewerrust"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <you@example.com>"]
+description = "Minimal OP2MapViewer prototype in Rust using eframe and image"
+license = "MIT"
+
+[dependencies]
+eframe = "0.27"
+egui = "0.27"
+image = "0.25"
+rfd = "0.13" # For file dialogs
