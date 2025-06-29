@@ -1,6 +1,7 @@
 //! Map data structures for OP2MapViewer
 
 use std::fmt;
+use std::sync::Arc;
 
 /// A 2D position in the map
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,17 +16,24 @@ impl Position {
     }
 }
 
+/// Information about a tile from a tileset
+#[derive(Debug, Clone)]
+pub struct TileInfo {
+    pub tileset_name: String,
+    pub tile_index: u32,
+}
+
 /// Map cell types in Outpost 2
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CellType {
     Normal,
-    Lava(u8),     // Variant indicates lava color/type
-    Microbe(u8),  // Variant indicates microbe growth stage
-    Mine(bool),   // Boolean indicates if mine is depleted
-    Dirt(u8),     // Variant indicates dirt type
-    Rock(u8),     // Variant indicates rock type
-    Tube(u8),     // Variant indicates tube connections
-    Wall(u8),     // Variant indicates wall type
+    Lava(u8),    // Variant indicates lava color/type
+    Microbe(u8), // Variant indicates microbe growth stage
+    Mine(bool),  // Boolean indicates if mine is depleted
+    Dirt(u8),    // Variant indicates dirt type
+    Rock(u8),    // Variant indicates rock type
+    Tube(u8),    // Variant indicates tube connections
+    Wall(u8),    // Variant indicates wall type
 }
 
 impl fmt::Display for CellType {
@@ -34,7 +42,11 @@ impl fmt::Display for CellType {
             CellType::Normal => write!(f, "Normal Ground"),
             CellType::Lava(variant) => write!(f, "Lava Type {}", variant),
             CellType::Microbe(stage) => write!(f, "Microbe Growth Stage {}", stage),
-            CellType::Mine(depleted) => write!(f, "Mine ({})", if *depleted { "Depleted" } else { "Active" }),
+            CellType::Mine(depleted) => write!(
+                f,
+                "Mine ({})",
+                if *depleted { "Depleted" } else { "Active" }
+            ),
             CellType::Dirt(variant) => write!(f, "Dirt Type {}", variant),
             CellType::Rock(variant) => write!(f, "Rock Type {}", variant),
             CellType::Tube(connections) => write!(f, "Tube (Connections: {:08b})", connections),
@@ -51,6 +63,7 @@ pub struct Cell {
     pub height: u8,
     pub has_wreckage: bool,
     pub has_unit: bool,
+    pub tile_info: Option<TileInfo>,
 }
 
 impl Cell {
@@ -61,17 +74,31 @@ impl Cell {
             height,
             has_wreckage: false,
             has_unit: false,
+            tile_info: None,
         }
     }
 
     pub fn description(&self) -> String {
+        let tile_info = match &self.tile_info {
+            Some(info) => format!(
+                "Tileset: {} (Index: {})\n",
+                info.tileset_name, info.tile_index
+            ),
+            None => String::new(),
+        };
+
         format!(
-            "Position: ({}, {})\nType: {}\nHeight: {}\n{}{}",
+            "Position: ({}, {})\nType: {}\nHeight: {}\n{}{}{}",
             self.position.x,
             self.position.y,
             self.cell_type,
             self.height,
-            if self.has_wreckage { "Contains wreckage\n" } else { "" },
+            tile_info,
+            if self.has_wreckage {
+                "Contains wreckage\n"
+            } else {
+                ""
+            },
             if self.has_unit { "Contains unit\n" } else { "" }
         )
     }
@@ -106,20 +133,21 @@ impl Default for MapInfo {
 pub struct Map {
     pub info: MapInfo,
     pub cells: Vec<Vec<Cell>>,
+    pub tileset_cache: Option<Arc<crate::map::loader::TilesetCache>>,
 }
 
 impl Map {
     pub fn new(info: MapInfo) -> Self {
-        let cells = vec![vec![
-            Cell::new(
-                Position::new(0, 0),
-                CellType::Normal,
-                0
-            );
-            info.width as usize];
-            info.height as usize
-        ];
-        Self { info, cells }
+        let cells =
+            vec![
+                vec![Cell::new(Position::new(0, 0), CellType::Normal, 0); info.width as usize];
+                info.height as usize
+            ];
+        Self {
+            info,
+            cells,
+            tileset_cache: None,
+        }
     }
 
     pub fn get_cell(&self, x: i32, y: i32) -> Option<&Cell> {
@@ -138,5 +166,9 @@ impl Map {
         self.cells
             .get_mut(y as usize)
             .and_then(|row| row.get_mut(x as usize))
+    }
+
+    pub fn set_tileset_cache(&mut self, cache: Arc<crate::map::loader::TilesetCache>) {
+        self.tileset_cache = Some(cache);
     }
 }

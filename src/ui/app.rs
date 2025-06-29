@@ -1,17 +1,12 @@
 //! Main application for OP2MapViewer
 
-use std::path::PathBuf;
 use eframe::egui::{self, TextureHandle};
 use rfd::FileDialog;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
-use crate::map::{
-    types::Map,
-    loader::{load_map, MapLoadError},
-};
-use super::{
-    map_view::MapView,
-    cell_info::CellInfoPanel,
-};
+use super::{cell_info::CellInfoPanel, map_view::MapView};
+use crate::map::{load_map, load_tilesets, Map, MapInfo, MapLoadError, TilesetCache};
 
 /// Main application state
 pub struct MapViewerApp {
@@ -24,6 +19,8 @@ pub struct MapViewerApp {
     settings_open: bool,
     about_open: bool,
     selected_cell_pos: Option<(i32, i32)>,
+    tileset_cache: Option<Arc<TilesetCache>>,
+    tileset_path: Option<PathBuf>,
 }
 
 impl Default for MapViewerApp {
@@ -38,6 +35,8 @@ impl Default for MapViewerApp {
             settings_open: false,
             about_open: false,
             selected_cell_pos: None,
+            tileset_cache: None,
+            tileset_path: None,
         }
     }
 }
@@ -51,13 +50,33 @@ impl MapViewerApp {
             ..Default::default()
         });
 
-        Self::default()
+        let mut app = Self::default();
+
+        // Try to load tilesets if they're in the expected location
+        let potential_tileset_paths = ["../op2graphics_rs/tilesets.zip", "tilesets.zip"];
+
+        for path in potential_tileset_paths {
+            if Path::new(path).exists() {
+                if let Ok(cache) = load_tilesets(Path::new(path)) {
+                    app.tileset_cache = Some(cache);
+                    app.tileset_path = Some(PathBuf::from(path));
+                    break;
+                }
+            }
+        }
+
+        app
     }
 
     /// Attempts to load a map file
     fn load_map_file(&mut self, path: PathBuf) {
         match load_map(&path) {
-            Ok(map) => {
+            Ok(mut map) => {
+                // If we have a tileset cache, attach it to the map
+                if let Some(cache) = &self.tileset_cache {
+                    map.set_tileset_cache(cache.clone());
+                }
+
                 self.map = Some(map);
                 self.map_path = Some(path);
                 self.error_message = None;
@@ -71,6 +90,12 @@ impl MapViewerApp {
             }
             Err(MapLoadError::UnsupportedVersion(ver)) => {
                 self.error_message = Some(format!("Unsupported map version: {}", ver));
+            }
+            Err(MapLoadError::Op2UtilityError(e)) => {
+                self.error_message = Some(format!("Op2Utility error: {}", e));
+            }
+            Err(e) => {
+                self.error_message = Some(format!("Error loading map: {}", e));
             }
         }
     }
@@ -89,6 +114,31 @@ impl MapViewerApp {
                         ui.close_menu();
                     }
                 }
+                if ui.button("Load Tilesets...").clicked() {
+                    if let Some(path) = FileDialog::new()
+                        .add_filter("Zip Files", &["zip"])
+                        .pick_file()
+                    {
+                        match load_tilesets(&path) {
+                            Ok(cache) => {
+                                self.tileset_cache = Some(cache.clone());
+                                self.tileset_path = Some(path);
+
+                                // Update the map with the new tileset cache if it exists
+                                if let Some(map) = &mut self.map {
+                                    map.set_tileset_cache(cache);
+                                }
+
+                                self.error_message = None;
+                            }
+                            Err(e) => {
+                                self.error_message =
+                                    Some(format!("Failed to load tilesets: {}", e));
+                            }
+                        }
+                        ui.close_menu();
+                    }
+                }
                 if ui.button("Settings").clicked() {
                     self.settings_open = true;
                     ui.close_menu();
@@ -103,6 +153,7 @@ impl MapViewerApp {
                 let config = self.map_view.config_mut();
                 ui.add(egui::Slider::new(&mut config.zoom_level, 0.1..=5.0).text("Zoom"));
                 ui.checkbox(&mut config.show_grid, "Show Grid");
+                ui.checkbox(&mut config.use_tilesets, "Use Tilesets");
 
                 ui.separator();
                 let mut grid_rgb = [
@@ -146,9 +197,15 @@ impl MapViewerApp {
                 let config = self.map_view.config_mut();
 
                 ui.heading("Display");
-                ui.add(egui::Slider::new(&mut config.cell_size, 16.0..=64.0)
-                    .text("Cell Size"));
+                ui.add(egui::Slider::new(&mut config.cell_size, 16.0..=64.0).text("Cell Size"));
                 ui.checkbox(&mut config.show_grid, "Show Grid");
+                ui.checkbox(&mut config.use_tilesets, "Use Tilesets");
+
+                if let Some(path) = &self.tileset_path {
+                    ui.label(format!("Tileset: {}", path.display()));
+                } else {
+                    ui.label("No tileset loaded");
+                }
 
                 ui.separator();
                 ui.heading("Colors");

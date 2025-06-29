@@ -1,8 +1,8 @@
 //! Map-related functionality for OP2MapViewer
 
-pub mod types;
 pub mod loader;
+pub mod types;
 
 // Re-export commonly used items
-pub use types::{Map, MapInfo, Cell, CellType, Position};
-pub use loader::{load_map, load_map_preview, MapLoadError};
+pub use loader::{load_map, load_tilesets, MapLoadError, TilesetCache};
+pub use types::{Cell, CellType, Map, MapInfo, Position, TileInfo};

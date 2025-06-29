@@ -2,15 +2,11 @@
 
 use eframe::egui;
 
-mod map {
-    pub mod types;
-    pub mod loader;
-}
-
+mod map;
 mod ui {
     pub mod app;
-    pub mod map_view;
     pub mod cell_info;
+    pub mod map_view;
 }
 
 use ui::app::MapViewerApp;
