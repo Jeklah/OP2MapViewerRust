@@ -19,3 +19,6 @@ egui = "0.27"
 image = "0.25"
 rfd = "0.13"                                              # For file dialogs
 winresource = "0.1"                                       # For Windows resource files
+op2utility_rs = { path = "../op2utility_rs" }             # For handling OP2 map files
+zip = "0.6"                                               # For handling zip archives
+thiserror = "1.0"                                         # For error handling
